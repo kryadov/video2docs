@@ -19,6 +19,12 @@ Before running the tests, make sure you have installed all the required dependen
 pip install -r requirements.txt
 ```
 
+If you get "GPU is not available, using CPU" in the log then run
+```
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```
+
+
 The tests use mocking to avoid relying on actual external services, but the imports from the main application still need to be available.
 
 ## Running Tests

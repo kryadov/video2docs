@@ -1,7 +1,8 @@
 # Video processing
 pytube>=12.1.0  # For YouTube video downloading
+pytubefix>=9.3.0
 opencv-python>=4.7.0  # For video frame processing
-moviepy>=1.0.3  # For video manipulation
+moviepy>=2.0.0  # For video manipulation
 
 # Audio processing
 pydub>=0.25.1  # For audio manipulation
@@ -22,6 +23,7 @@ torch>=2.0.0  # PyTorch for GPU support
 transformers>=4.28.1  # Hugging Face transformers
 openai>=0.27.8  # OpenAI API (optional)
 langchain>=0.0.200  # For building LLM applications
+langchain-community>=0.3.27  # Community extensions for langchain
 
 # Utilities
 numpy>=1.24.3

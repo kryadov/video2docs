@@ -14,7 +14,7 @@ A Python application that converts YouTube videos or local video files to docume
 
 ## Requirements
 
-- Python 3.13 or higher
+- Exactly Python 3.12
 - CUDA-compatible GPU (optional, for faster processing)
 
 ## Installation
@@ -114,6 +114,24 @@ python src/video2docs.py path/to/your/video.mp4 --format odt --output-dir my_doc
 5. **Document Generation**:
    - Generates the document in the specified format (DOCX, ODT, or PDF)
    - Includes detected slides/images in the appropriate locations
+
+## API Usage and Costs
+
+When using OpenAI's ChatGPT API for content organization, it's important to understand how video length affects API usage and costs:
+
+- **Token Usage**: The application sends the first 4000 characters of the transcribed text to the LLM. This typically amounts to approximately 1000-1500 tokens, depending on the complexity of the language.
+
+- **Cost Estimation by Video Length**:
+  - **Short videos (1-5 minutes)**: Approximately 500-1500 tokens, costing around $0.01-$0.03 with GPT-3.5 or $0.05-$0.15 with GPT-4.
+  - **Medium videos (5-15 minutes)**: The transcription may exceed 4000 characters, but the application still only sends the first 4000 characters, keeping costs similar to short videos.
+  - **Long videos (15+ minutes)**: Despite the length, API costs remain constant since only the first 4000 characters are processed. However, this may result in incomplete content organization for very long videos.
+
+- **Optimizing Costs**:
+  - For longer videos, consider breaking them into smaller segments for better content organization.
+  - Use the Hugging Face models option instead of OpenAI for cost-free processing (though quality may vary).
+  - Adjust the character limit in the source code if you need more comprehensive processing of longer videos (this will increase API costs).
+
+Note: These estimates are based on OpenAI's pricing as of 2023. Check [OpenAI's pricing page](https://openai.com/pricing) for the most current rates.
 
 ## Customization
 

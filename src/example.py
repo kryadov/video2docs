@@ -10,7 +10,7 @@ a YouTube video or local video file to a document.
 
 import os
 import sys
-from src import Video2Docs
+from video2docs import Video2Docs
 
 def youtube_example():
     """Example of converting a YouTube video to a document."""

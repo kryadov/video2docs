@@ -354,7 +354,6 @@ class LLMProcessor:
                 device=0 if device == "cuda" else -1,
                 max_length=512,
                 temperature=0.1,
-                return_full_text=False,  # Only return the generated text, not the input
                 num_return_sequences=1,  # Only return one sequence
                 do_sample=True  # Enable sampling for more creative outputs
             )
@@ -410,8 +409,9 @@ class LLMProcessor:
             """
         )
 
-        # Create formatted prompt
-        formatted_prompt = prompt.format(text=full_text[:4000], num_slides=len(slides))
+        # Create formatted prompt - limit text to fit within model's token limit (512 tokens)
+        # Assuming ~4 chars per token, limit to ~1500 chars to leave room for prompt template
+        formatted_prompt = prompt.format(text=full_text[:1500], num_slides=len(slides))
 
         # Invoke the LLM
         raw_result = self.llm.invoke(formatted_prompt)

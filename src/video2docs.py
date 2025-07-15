@@ -488,6 +488,20 @@ class DocumentGenerator:
         doc.add_heading("Executive Summary", level=1)
         doc.add_paragraph(content["summary"])
 
+        # Add a section for slides/images if available
+        if slides:
+            doc.add_heading("Slides/Images", level=1)
+            for i, (timestamp, slide_path) in enumerate(slides):
+                try:
+                    # Add a caption for the slide
+                    doc.add_paragraph(f"Slide {i+1} (Timestamp: {timestamp:.2f}s)")
+                    # Add the image
+                    doc.add_picture(slide_path, width=Inches(6))
+                    # Add some space after each image
+                    doc.add_paragraph()
+                except Exception as e:
+                    logger.error(f"Error adding slide {i} from {slide_path}: {e}")
+
         # Add sections
         for section in content["sections"]:
             doc.add_heading(section["heading"], level=1)
@@ -499,7 +513,10 @@ class DocumentGenerator:
                 if slide_match:
                     slide_index = int(slide_match.group(1))
                     if 0 <= slide_index < len(slides):
-                        doc.add_picture(slides[slide_index][1], width=Inches(6))
+                        try:
+                            doc.add_picture(slides[slide_index][1], width=Inches(6))
+                        except Exception as e:
+                            logger.error(f"Error adding slide {slide_index} from {slides[slide_index][1]}: {e}")
                 else:
                     if part.strip():
                         doc.add_paragraph(part)
@@ -547,6 +564,31 @@ class DocumentGenerator:
         summary.addText(content["summary"])
         doc.text.addElement(summary)
 
+        # Add a section for slides/images if available
+        if slides:
+            slides_heading = P(stylename=heading_style)
+            slides_heading.addText("Slides/Images")
+            doc.text.addElement(slides_heading)
+
+            for i, (timestamp, slide_path) in enumerate(slides):
+                try:
+                    # Add a caption for the slide
+                    caption = P()
+                    caption.addText(f"Slide {i+1} (Timestamp: {timestamp:.2f}s)")
+                    doc.text.addElement(caption)
+
+                    # Add image
+                    frame = Frame(width="6in", height="4in")
+                    img = ODFImage(href=slide_path)
+                    frame.addElement(img)
+                    doc.text.addElement(frame)
+
+                    # Add some space after each image
+                    spacer = P()
+                    doc.text.addElement(spacer)
+                except Exception as e:
+                    logger.error(f"Error adding slide {i} from {slide_path}: {e}")
+
         # Add sections
         for section in content["sections"]:
             section_heading = P(stylename=heading_style)
@@ -560,11 +602,14 @@ class DocumentGenerator:
                 if slide_match:
                     slide_index = int(slide_match.group(1))
                     if 0 <= slide_index < len(slides):
-                        # Add image
-                        frame = Frame(width="6in", height="4in")
-                        img = ODFImage(href=slides[slide_index][1])
-                        frame.addElement(img)
-                        doc.text.addElement(frame)
+                        try:
+                            # Add image
+                            frame = Frame(width="6in", height="4in")
+                            img = ODFImage(href=slides[slide_index][1])
+                            frame.addElement(img)
+                            doc.text.addElement(frame)
+                        except Exception as e:
+                            logger.error(f"Error adding slide {slide_index} from {slides[slide_index][1]}: {e}")
                 else:
                     if part.strip():
                         p = P()
@@ -612,6 +657,27 @@ class DocumentGenerator:
         pdf.multi_cell(0, 10, content["summary"])
         pdf.ln(10)
 
+        # Add a section for slides/images if available
+        if slides:
+            pdf.set_font("Arial", "B", 14)
+            pdf.cell(0, 10, "Slides/Images", ln=True)
+            pdf.set_font("Arial", "", 12)
+
+            for i, (timestamp, slide_path) in enumerate(slides):
+                try:
+                    # Add a caption for the slide
+                    pdf.multi_cell(0, 10, f"Slide {i+1} (Timestamp: {timestamp:.2f}s)")
+
+                    # Add image
+                    pdf.image(slide_path, x=10, w=190)
+
+                    # Add some space after each image
+                    pdf.ln(5)
+                except Exception as e:
+                    logger.error(f"Error adding slide {i} from {slide_path}: {e}")
+
+            pdf.ln(10)
+
         # Add sections
         for section in content["sections"]:
             pdf.set_font("Arial", "B", 14)
@@ -625,8 +691,11 @@ class DocumentGenerator:
                 if slide_match:
                     slide_index = int(slide_match.group(1))
                     if 0 <= slide_index < len(slides):
-                        # Add image
-                        pdf.image(slides[slide_index][1], x=10, w=190)
+                        try:
+                            # Add image
+                            pdf.image(slides[slide_index][1], x=10, w=190)
+                        except Exception as e:
+                            logger.error(f"Error adding slide {slide_index} from {slides[slide_index][1]}: {e}")
                 else:
                     if part.strip():
                         pdf.multi_cell(0, 10, part)

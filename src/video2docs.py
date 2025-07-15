@@ -44,9 +44,9 @@ from fpdf import FPDF
 
 # LLM and AI
 import torch
-from transformers import pipeline
+from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 from langchain_community.llms import OpenAI
-from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 
@@ -328,14 +328,39 @@ class LLMProcessor:
             logger.info(f"Using HuggingFace model: {self.model_name}")
 
             # Set device based on GPU availability and preference
-            device = 0 if self.use_gpu else -1
-            logger.info(f"Using device: {'GPU' if device == 0 else 'CPU'}")
+            device = "cuda" if self.use_gpu else "cpu"
+            logger.info(f"Using device: {device}")
 
-            self.llm = HuggingFaceEndpoint(
-                endpoint_url=f"https://api-inference.huggingface.co/models/{self.model_name}",
-                huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-                model_kwargs={"temperature": 0.1, "max_length": 512}
+            # Download and load the model locally
+            logger.info(f"Downloading and loading model: {self.model_name}")
+            try:
+                model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+                tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+
+                # Move model to GPU if available
+                model = model.to(device)
+                logger.info(f"Successfully loaded model {self.model_name} to {device}")
+            except Exception as e:
+                logger.error(f"Error loading model {self.model_name}: {e}")
+                logger.error("Please check your internet connection and ensure you have enough disk space.")
+                logger.error("If the error persists, try using a different model or check if the model is available on Hugging Face Hub.")
+                raise RuntimeError(f"Failed to load model {self.model_name}: {e}") from e
+
+            # Create a text generation pipeline
+            text_generation_pipeline = pipeline(
+                "text2text-generation",
+                model=model,
+                tokenizer=tokenizer,
+                device=0 if device == "cuda" else -1,
+                max_length=512,
+                temperature=0.1,
+                return_full_text=False,  # Only return the generated text, not the input
+                num_return_sequences=1,  # Only return one sequence
+                do_sample=True  # Enable sampling for more creative outputs
             )
+
+            # Create a LangChain pipeline
+            self.llm = HuggingFacePipeline(pipeline=text_generation_pipeline)
 
     def organize_content(self, transcription: List[Dict], slides: List[Tuple[float, str]]) -> Dict:
         """Organize content using LLM.
@@ -389,7 +414,16 @@ class LLMProcessor:
         formatted_prompt = prompt.format(text=full_text[:4000], num_slides=len(slides))
 
         # Invoke the LLM
-        result = self.llm.invoke(formatted_prompt)
+        raw_result = self.llm.invoke(formatted_prompt)
+
+        # Extract text from the result (HuggingFacePipeline returns a list of dictionaries)
+        if isinstance(raw_result, list) and len(raw_result) > 0 and 'generated_text' in raw_result[0]:
+            result = raw_result[0]['generated_text']
+        else:
+            result = raw_result  # Fallback to original format for compatibility
+
+        logger.debug(f"Raw LLM result type: {type(raw_result)}")
+        logger.debug(f"Processed result: {result[:100]}...")
 
         # Parse the result
         try:

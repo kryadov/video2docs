@@ -260,7 +260,7 @@ class AudioProcessor:
         self.recognizer = sr.Recognizer()
         logger.info(f"Initialized audio processor (GPU: {self.use_gpu})")
 
-    def transcribe_audio(self, audio_path: str, chunk_size: int = 60000) -> List[Dict[str, Union[str, float, float]]]:
+    def transcribe_audio(self, audio_path: str, chunk_size: int = 60000, language: str = "en-US") -> List[Dict[str, Union[str, float, float]]]:
         """Transcribe audio file to text.
 
         Args:
@@ -290,7 +290,7 @@ class AudioProcessor:
                         audio_data = self.recognizer.record(source)
                         logger.info(f"Transcribing chunk from {start_time} to {end_time} ms")
                         try:
-                            text = self.recognizer.recognize_google(audio_data)
+                            text = self.recognizer.recognize_google(audio_data, language=language)
                             logger.info(f"Transcribed chunk: {text}")
                         except sr.UnknownValueError:
                             logger.warning(f"Speech not understood for chunk {start_time}-{end_time} ms; leaving text empty.")
@@ -755,7 +755,7 @@ class Video2Docs:
         self.llm_processor = LLMProcessor(use_openai=False, use_gpu=self.use_gpu)
         self.document_generator = DocumentGenerator(output_dir=self.output_dir)
 
-    def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:
+    def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, language: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:
         """Process a video and convert it to a document.
 
         Args:
@@ -872,7 +872,7 @@ class Video2Docs:
 
             # Step 4: Transcribe audio
             report("transcribe", 0.0)
-            transcription = self.audio_processor.transcribe_audio(audio_path)
+            transcription = self.audio_processor.transcribe_audio(audio_path, language=language) if language else self.audio_processor.transcribe_audio(audio_path)
             base += weights.get("transcribe", 0.0)
             report("transcribe", 1.0)
             check_cancel()
@@ -951,6 +951,11 @@ def main():
         action="store_true",
         help="Enable verbose logging"
     )
+    parser.add_argument(
+        "--language", "-l",
+        default=os.environ.get("VIDEO2DOCS_LANGUAGE", "en-US"),
+        help="Language code (BCP-47) for speech recognition, e.g., en-US, ru-RU"
+    )
 
     args = parser.parse_args()
 
@@ -967,7 +972,7 @@ def main():
 
     # Process video
     try:
-        output_path = converter.process(args.input, args.format)
+        output_path = converter.process(args.input, args.format, language=args.language)
         print(f"Document generated: {output_path}")
         return 0
     except Exception as e:

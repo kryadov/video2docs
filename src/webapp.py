@@ -204,6 +204,7 @@ def run_conversion():
     input_source = request.form.get("input", "").strip()
     output_format = request.form.get("format", "docx").strip().lower()
     output_name = request.form.get("output_name", "").strip()
+    language = (request.form.get("language") or os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US").strip()
 
     uploaded_file_path = None
     if "file" in request.files and request.files["file"] and request.files["file"].filename:
@@ -242,6 +243,7 @@ def run_conversion():
         "input_is_url": uploaded_file_path is None,
         "format": output_format,
         "output_name": output_name,
+        "language": language,
         "status": "running",
         "result_path": None,
         "started_at": started_at,
@@ -274,13 +276,14 @@ def run_conversion():
     # Enqueue background job
     def job_fn(progress_cb=None, cancel_event=None):
         converter = Video2Docs(output_dir=OUTPUT_DIR, temp_dir=per_job_temp_dir)
-        return converter.process(actual_input, output_format=output_format, output_name=output_name,
+        return converter.process(actual_input, output_format=output_format, output_name=output_name, language=language,
                                  progress_callback=progress_cb, cancel_event=cancel_event)
 
     job_manager.enqueue(item_id, job_fn, params={
         "input": actual_input,
         "format": output_format,
         "output_name": output_name,
+        "language": language,
     })
     flash("Conversion started in background", "info")
     return redirect(url_for("running", item_id=item_id))

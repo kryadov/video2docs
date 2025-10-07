@@ -25,7 +25,32 @@
   </div>
   <div class="col-md-4">
     <label class="form-label">Audio language</label>
-    <input type="text" name="language" class="form-control" value="{{ default_language }}" placeholder="e.g., en-US, fr-FR">
+    <select name="language" class="form-select">
+      <option value="en-US" {% if default_language == 'en-US' %}selected{% endif %}>English (US) - en-US</option>
+      <option value="en-GB" {% if default_language == 'en-GB' %}selected{% endif %}>English (UK) - en-GB</option>
+      <option value="es-ES" {% if default_language == 'es-ES' %}selected{% endif %}>Spanish (Spain) - es-ES</option>
+      <option value="es-MX" {% if default_language == 'es-MX' %}selected{% endif %}>Spanish (Mexico) - es-MX</option>
+      <option value="fr-FR" {% if default_language == 'fr-FR' %}selected{% endif %}>French - fr-FR</option>
+      <option value="de-DE" {% if default_language == 'de-DE' %}selected{% endif %}>German - de-DE</option>
+      <option value="it-IT" {% if default_language == 'it-IT' %}selected{% endif %}>Italian - it-IT</option>
+      <option value="pt-BR" {% if default_language == 'pt-BR' %}selected{% endif %}>Portuguese (Brazil) - pt-BR</option>
+      <option value="pt-PT" {% if default_language == 'pt-PT' %}selected{% endif %}>Portuguese (Portugal) - pt-PT</option>
+      <option value="ru-RU" {% if default_language == 'ru-RU' %}selected{% endif %}>Russian - ru-RU</option>
+      <option value="uk-UA" {% if default_language == 'uk-UA' %}selected{% endif %}>Ukrainian - uk-UA</option>
+      <option value="zh-CN" {% if default_language == 'zh-CN' %}selected{% endif %}>Chinese (Simplified) - zh-CN</option>
+      <option value="zh-TW" {% if default_language == 'zh-TW' %}selected{% endif %}>Chinese (Traditional) - zh-TW</option>
+      <option value="ja-JP" {% if default_language == 'ja-JP' %}selected{% endif %}>Japanese - ja-JP</option>
+      <option value="ko-KR" {% if default_language == 'ko-KR' %}selected{% endif %}>Korean - ko-KR</option>
+      <option value="hi-IN" {% if default_language == 'hi-IN' %}selected{% endif %}>Hindi - hi-IN</option>
+      <option value="ar-SA" {% if default_language == 'ar-SA' %}selected{% endif %}>Arabic (Saudi) - ar-SA</option>
+      <option value="tr-TR" {% if default_language == 'tr-TR' %}selected{% endif %}>Turkish - tr-TR</option>
+      <option value="nl-NL" {% if default_language == 'nl-NL' %}selected{% endif %}>Dutch - nl-NL</option>
+      <option value="pl-PL" {% if default_language == 'pl-PL' %}selected{% endif %}>Polish - pl-PL</option>
+      <option value="sv-SE" {% if default_language == 'sv-SE' %}selected{% endif %}>Swedish - sv-SE</option>
+      <option value="nb-NO" {% if default_language == 'nb-NO' %}selected{% endif %}>Norwegian (Bokmål) - nb-NO</option>
+      <option value="cs-CZ" {% if default_language == 'cs-CZ' %}selected{% endif %}>Czech - cs-CZ</option>
+      <option value="ro-RO" {% if default_language == 'ro-RO' %}selected{% endif %}>Romanian - ro-RO</option>
+    </select>
   </div>
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Start Conversion</button>

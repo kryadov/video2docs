@@ -14,34 +14,34 @@ A Python application that converts YouTube videos or local video files to docume
 
 ## Requirements
 
-- Exactly Python 3.12
+- Python 3.13
 - CUDA-compatible GPU (optional, for faster processing)
 
 ## Installation
 
 1. Clone this repository:
-   ```
+   ```shell
    git clone https://github.com/yourusername/video2docs.git
    cd video2docs
    ```
 
 2. Create a virtual environment (recommended):
-   ```
+   ```sell
    python -m venv venv
    ```
 
 3. Activate the virtual environment:
    - Windows:
-     ```
+     ```PowerShell
      venv\Scripts\activate
      ```
    - macOS/Linux:
-     ```
+     ```shell
      source venv/bin/activate
      ```
 
 4. Install the required dependencies:
-   ```
+   ```shell
    pip install -r requirements.txt
    ```
 
@@ -146,6 +146,40 @@ You can customize the behavior of the application by modifying the parameters in
 - **GPU not being used**: Make sure you have the appropriate CUDA drivers installed and that PyTorch can detect your GPU. You can check this by running `torch.cuda.is_available()` in a Python shell.
 - **Memory errors**: Processing large videos can be memory-intensive. Try reducing the frame extraction interval or processing shorter video segments.
 - **Missing dependencies**: Make sure all dependencies are installed by running `pip install -r requirements.txt`.
+
+## Web UI (Beta)
+
+A simple Bootstrap-powered web UI is included.
+
+1. Set up your environment in a `.env` file (optional, defaults shown):
+   ```env
+   ADMIN_USER=admin
+   ADMIN_PASS=admin123
+   SECRET_KEY=change-me
+   OUTPUT_DIR=output
+   # TEMP_DIR=output\\temp
+   ```
+2. Install requirements:
+   ```shell
+   pip install -r requirements.txt
+   ```
+3. Run the web app:
+   ```shell
+   python -m src.webapp
+   ```
+4. Open http://localhost:5000 and log in with the configured credentials.
+
+Features:
+- Login (credentials from .env)
+- New conversion: YouTube URL or file upload, choose format, optional output filename
+- History list with details page per conversion
+- Ability to re-run a previous conversion with modified parameters
+- Download the generated document from the detail page
+
+Notes:
+- Conversions and their metadata are stored in `OUTPUT_DIR/conversions.json`.
+- Uploaded files are saved under `OUTPUT_DIR/uploads`.
+- Processing runs in the background with live progress and ETA. You can cancel a running conversion from the dedicated Running page. Closing the browser/tab will not interrupt the process.
 
 ## License
 

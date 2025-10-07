@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>New Conversion</h3>
+<p class="text-muted">Provide a YouTube URL or upload a video file. Choose output format and optional output file name.</p>
+<form method="post" action="{{ url_for('run_conversion') }}" enctype="multipart/form-data" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">YouTube URL or Video Path</label>
+    <input type="url" name="input" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Or Upload Video File</label>
+    <input type="file" name="file" class="form-control" accept="video/*">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Output Format</label>
+    <select class="form-select" name="format">
+      <option value="docx">DOCX</option>
+      <option value="odt">ODT</option>
+      <option value="pdf">PDF</option>
+    </select>
+  </div>
+  <div class="col-md-8">
+    <label class="form-label">Output File Name (without extension)</label>
+    <input type="text" name="output_name" class="form-control" placeholder="Leave empty to derive from input">
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Start Conversion</button>
+    <a href="{{ url_for('history') }}" class="btn btn-secondary">View History</a>
+  </div>
+</form>
+{% endblock %}

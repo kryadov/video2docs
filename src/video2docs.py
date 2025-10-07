@@ -287,7 +287,9 @@ class AudioProcessor:
                 # Transcribe chunk
                 with sr.AudioFile(chunk_path) as source:
                     audio_data = self.recognizer.record(source)
+                    logger.info(f"Transcribing chunk from {start_time} to {end_time} ms")
                     text = self.recognizer.recognize_google(audio_data)
+                    logger.info(f"Transcribed chunk: {text}")
 
                 chunks.append({
                     "text": text,
@@ -741,12 +743,14 @@ class Video2Docs:
         self.llm_processor = LLMProcessor(use_openai=False, use_gpu=self.use_gpu)
         self.document_generator = DocumentGenerator(output_dir=self.output_dir)
 
-    def process(self, input_path: str, output_format: str = "docx") -> str:
+    def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:
         """Process a video and convert it to a document.
 
         Args:
             input_path: Path or URL to the video
             output_format: Output document format (docx, odt, pdf)
+            output_name: Optional base name (without extension) for the output file. If not provided,
+                the name is derived from the input video file or video title.
 
         Returns:
             Path to the generated document
@@ -754,8 +758,41 @@ class Video2Docs:
         start_time = time.time()
         logger.info(f"Starting conversion of: {input_path}")
 
+        # Progress/ETA helpers
+        weights = {
+            "download": 0.10,
+            "extract_audio": 0.05,
+            "extract_frames": 0.25,
+            "detect_slides": 0.10,
+            "transcribe": 0.30,
+            "organize_content": 0.05,
+            "generate_document": 0.15,
+        }
+        base = 0.0
+
+        def report(step: str, step_progress: float):
+            if progress_callback:
+                total_progress = (base + weights.get(step, 0.0) * float(step_progress or 0.0)) * 100.0
+                elapsed = time.time() - start_time
+                eta = int(elapsed * (100.0 - total_progress) / max(total_progress, 1e-6)) if total_progress > 0 else None
+                try:
+                    progress_callback(step, round(total_progress, 1), eta)
+                except Exception:
+                    pass
+
+        def check_cancel():
+            if cancel_event is not None:
+                try:
+                    if cancel_event.is_set():
+                        from .jobs import CancelledError
+                        raise CancelledError()
+                except AttributeError:
+                    # Non-standard event
+                    pass
+
         try:
             # Step 1: Get the video file
+            report("download", 0.0)
             if input_path.startswith(("http://", "https://")) and "youtube" in input_path:
                 try:
                     video_path = self.video_processor.download_youtube_video(input_path)
@@ -792,22 +829,53 @@ class Video2Docs:
                 video_path = input_path
                 base_name = os.path.basename(video_path).split(".")[0]
 
+            # Download complete
+            base += weights.get("download", 0.0)
+            report("download", 1.0)
+            check_cancel()
+
+            # Override base name if a custom output name is provided
+            if output_name:
+                base_name = os.path.splitext(output_name)[0]
+
             # Step 2: Extract audio
+            report("extract_audio", 0.0)
             audio_path = self.video_processor.extract_audio(video_path)
+            base += weights.get("extract_audio", 0.0)
+            report("extract_audio", 1.0)
+            check_cancel()
 
             # Step 3: Extract frames and detect slides
+            report("extract_frames", 0.0)
             frames = self.video_processor.extract_frames(video_path)
+            base += weights.get("extract_frames", 0.0)
+            report("extract_frames", 1.0)
+            check_cancel()
+
+            report("detect_slides", 0.0)
             slides = self.video_processor.detect_slides(frames)
+            base += weights.get("detect_slides", 0.0)
+            report("detect_slides", 1.0)
+            check_cancel()
 
             # Step 4: Transcribe audio
+            report("transcribe", 0.0)
             transcription = self.audio_processor.transcribe_audio(audio_path)
+            base += weights.get("transcribe", 0.0)
+            report("transcribe", 1.0)
+            check_cancel()
 
             # Step 5: Organize content with LLM
+            report("organize_content", 0.0)
             content = self.llm_processor.organize_content(transcription, slides)
+            base += weights.get("organize_content", 0.0)
+            report("organize_content", 1.0)
+            check_cancel()
 
             # Step 6: Generate document
             output_path = os.path.join(self.output_dir, f"{base_name}.{output_format}")
 
+            report("generate_document", 0.0)
             if output_format.lower() == "docx":
                 result_path = self.document_generator.generate_docx(content, slides, output_path)
             elif output_format.lower() == "odt":
@@ -816,6 +884,10 @@ class Video2Docs:
                 result_path = self.document_generator.generate_pdf(content, slides, output_path)
             else:
                 raise ValueError(f"Unsupported output format: {output_format}")
+
+            base += weights.get("generate_document", 0.0)
+            report("generate_document", 1.0)
+            check_cancel()
 
             elapsed_time = time.time() - start_time
             logger.info(f"Conversion completed in {elapsed_time:.2f} seconds")

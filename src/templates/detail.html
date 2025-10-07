@@ -1,0 +1,91 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Conversion Details</h3>
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">ID</dt>
+          <dd class="col-sm-8"><code>{{ item['id'] }}</code></dd>
+          <dt class="col-sm-4">Input</dt>
+          <dd class="col-sm-8"><span class="text-break">{{ item['input'] }}</span></dd>
+          <dt class="col-sm-4">Format</dt>
+          <dd class="col-sm-8">{{ item['format']|upper }}</dd>
+          <dt class="col-sm-4">Output name</dt>
+          <dd class="col-sm-8">{{ item['output_name'] }}</dd>
+          <dt class="col-sm-4">Status</dt>
+          <dd class="col-sm-8">
+            {% if item['status'] == 'completed' %}
+              <span class="badge bg-success">completed</span>
+            {% elif item['status'] == 'failed' %}
+              <span class="badge bg-danger">failed</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ item['status'] }}</span>
+            {% endif %}
+          </dd>
+          <dt class="col-sm-4">Started</dt>
+          <dd class="col-sm-8">{{ item['started_at'] }}</dd>
+          <dt class="col-sm-4">Finished</dt>
+          <dd class="col-sm-8">{{ item['finished_at'] or '-' }}</dd>
+          {% if item['error'] %}
+          <dt class="col-sm-4">Error</dt>
+          <dd class="col-sm-8"><pre class="mb-0 small">{{ item['error'] }}</pre></dd>
+          {% endif %}
+        </dl>
+      </div>
+      <div class="col-md-6 d-flex align-items-start justify-content-end gap-2">
+        {% if item['status'] == 'completed' and item['result_path'] %}
+        <a class="btn btn-success" href="{{ url_for('download', item_id=item['id']) }}">Download Result</a>
+        {% endif %}
+        <a class="btn btn-secondary" href="{{ url_for('history') }}">Back to History</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if item['status'] not in ['completed','failed'] %}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div><strong>Current step:</strong> {{ item.get('step', '-') }}</div>
+        <div class="progress mt-2">
+          <div class="progress-bar" role="progressbar" style="width: {{ (item.get('progress') or 0) | int }}%">{{ (item.get('progress') or 0) | int }}%</div>
+        </div>
+        <div class="text-muted mt-1">ETA: {% if item.get('eta_seconds') %}{{ item.get('eta_seconds') }}s{% else %}-{% endif %}</div>
+      </div>
+      <div class="text-end">
+        <a class="btn btn-outline-primary" href="{{ url_for('running', item_id=item['id']) }}">Open running page</a>
+        <form method="post" action="{{ url_for('job_cancel', item_id=item['id']) }}" class="d-inline" onsubmit="return confirm('Cancel this conversion?');">
+          <button type="submit" class="btn btn-warning">Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<h4>Re-run with changed parameters</h4>
+<form method="post" action="{{ url_for('rerun', item_id=item['id']) }}" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">YouTube URL or Video Path</label>
+    <input type="text" name="input" class="form-control" value="{{ item['input'] }}">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Output Format</label>
+    <select class="form-select" name="format">
+      <option value="docx" {% if item['format'] == 'docx' %}selected{% endif %}>DOCX</option>
+      <option value="odt" {% if item['format'] == 'odt' %}selected{% endif %}>ODT</option>
+      <option value="pdf" {% if item['format'] == 'pdf' %}selected{% endif %}>PDF</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Output File Name</label>
+    <input type="text" name="output_name" class="form-control" value="{{ item['output_name'] }}">
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Create New Conversion</button>
+  </div>
+</form>
+{% endblock %}

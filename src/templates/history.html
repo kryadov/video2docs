@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Conversion History</h3>
+{% if items %}
+<table class="table table-striped align-middle">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Input</th>
+      <th>Format</th>
+      <th>Output Name</th>
+      <th>Status</th>
+      <th>Started</th>
+      <th>Finished</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for it in items %}
+    <tr>
+      <td class="text-monospace small">{{ it.id if it.id else it['id'] }}</td>
+      <td class="text-truncate" style="max-width: 320px;" title="{{ it['input'] }}">{{ it['input'] }}</td>
+      <td>{{ it['format']|upper }}</td>
+      <td>{{ it['output_name'] }}</td>
+      <td>
+        {% if it['status'] == 'completed' %}
+          <span class="badge bg-success">completed</span>
+        {% elif it['status'] == 'failed' %}
+          <span class="badge bg-danger">failed</span>
+        {% else %}
+          <span class="badge bg-secondary">{{ it['status'] }}</span>
+        {% endif %}
+      </td>
+      <td class="small">{{ it['started_at'] }}</td>
+      <td class="small">{{ it['finished_at'] or '-' }}</td>
+      <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_detail', item_id=it['id']) }}">Details</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted">No conversions yet.</p>
+{% endif %}
+<a href="{{ url_for('index') }}" class="btn btn-primary">New Conversion</a>
+{% endblock %}

@@ -29,4 +29,5 @@ langchain-community>=0.3.27  # Community extensions for langchain
 numpy>=1.24.3
 tqdm>=4.65.0  # Progress bars
 python-dotenv>=1.0.0  # Environment variable management
+Flask>=3.0.0  # Web UI
 huggingface_hub[hf_xet]

@@ -1,6 +1,7 @@
 # Video2Docs
 
 A Python application that converts YouTube videos or local video files to document formats (ODT, DOCX, PDF). The application extracts text from speech, identifies slides/images, and uses LLMs to organize the content into a well-structured document.
+![img.png](img.png)
 
 ## Features
 

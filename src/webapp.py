@@ -22,8 +22,13 @@ load_dotenv()
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")
 # Resolve OUTPUT_DIR to an absolute path based on the repository root (one level up from this file)
-_default_output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "output"))
-OUTPUT_DIR = os.environ.get("OUTPUT_DIR", _default_output_dir)
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+_default_output_dir = os.path.join(_repo_root, "output")
+_env_output_dir = os.environ.get("OUTPUT_DIR")
+if _env_output_dir:
+    OUTPUT_DIR = _env_output_dir if os.path.isabs(_env_output_dir) else os.path.abspath(os.path.join(_repo_root, _env_output_dir))
+else:
+    OUTPUT_DIR = _default_output_dir
 TEMP_DIR = os.environ.get("TEMP_DIR")
 ALLOWED_EXTENSIONS = {"mp4", "mov", "avi", "mkv", "webm"}
 

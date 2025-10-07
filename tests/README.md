@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 If you get "GPU is not available, using CPU" in the log then run
 ```
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 ```
 
 

@@ -24,18 +24,19 @@ def run_tests():
     """Run all tests."""
     # Create a test suite
     test_suite = unittest.TestSuite()
-    
-    # Add test cases
-    test_suite.addTest(unittest.makeSuite(TestVideoProcessor))
-    test_suite.addTest(unittest.makeSuite(TestAudioProcessor))
-    test_suite.addTest(unittest.makeSuite(TestLLMProcessor))
-    test_suite.addTest(unittest.makeSuite(TestDocumentGenerator))
-    test_suite.addTest(unittest.makeSuite(TestVideo2Docs))
-    
+
+    # Add test cases using the modern, supported loader (makeSuite is removed in Python 3.13)
+    loader = unittest.defaultTestLoader
+    test_suite.addTests(loader.loadTestsFromTestCase(TestVideoProcessor))
+    test_suite.addTests(loader.loadTestsFromTestCase(TestAudioProcessor))
+    test_suite.addTests(loader.loadTestsFromTestCase(TestLLMProcessor))
+    test_suite.addTests(loader.loadTestsFromTestCase(TestDocumentGenerator))
+    test_suite.addTests(loader.loadTestsFromTestCase(TestVideo2Docs))
+
     # Run the tests
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(test_suite)
-    
+
     # Return the result
     return result.wasSuccessful()
 

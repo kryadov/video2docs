@@ -8,6 +8,7 @@ A Python application that converts YouTube videos or local video files to docume
 - Convert YouTube videos to documents by providing a URL
 - Convert local video files to documents
 - Automatically extract text from speech using speech recognition
+- Multi-language speech recognition (set via --language or VIDEO2DOCS_LANGUAGE; supports BCP-47 codes like en-US, ru-RU)
 - Detect and extract slides/images from the video
 - Use LLMs to organize content into a structured document
 - Generate documents in multiple formats (ODT, DOCX, PDF)
@@ -80,6 +81,7 @@ python src/video2docs.py path/to/your/video.mp4 --format pdf
 - `--format`, `-f`: Output document format (choices: "docx", "odt", "pdf", default: "docx")
 - `--output-dir`, `-o`: Directory to save output documents (default: "output")
 - `--temp-dir`, `-t`: Directory for temporary files (default: auto-generated)
+- `--language`, `-l`: Language code for speech recognition (BCP-47, e.g., `en-US`, `ru-RU`). Defaults to `VIDEO2DOCS_LANGUAGE` env var or `en-US`.
 - `--no-gpu`: Disable GPU usage
 - `--verbose`, `-v`: Enable verbose logging
 
@@ -96,6 +98,21 @@ Convert a local video file to an ODT document and save it in a specific director
 ```
 python src/video2docs.py path/to/your/video.mp4 --format odt --output-dir my_documents
 ```
+
+### Multi-language transcription
+
+By default, English (`en-US`) is used for speech recognition. To transcribe in other languages, specify a BCP-47 language code:
+
+- CLI example (Russian):
+  ```
+  python src/video2docs.py path/to/your/video.mp4 -l ru-RU
+  ```
+- Web UI: set `VIDEO2DOCS_LANGUAGE` in your `.env` before starting the app, for example:
+  ```env
+  VIDEO2DOCS_LANGUAGE=ru-RU
+  ```
+
+Supported codes are those supported by the Google Web Speech API (e.g., en-US, en-GB, ru-RU, es-ES, de-DE, fr-FR, etc.).
 
 ## How It Works
 
@@ -162,7 +179,18 @@ A simple Bootstrap-powered web UI is included.
    ADMIN_PASS=admin123
    SECRET_KEY=change-me
    OUTPUT_DIR=output
-   # TEMP_DIR=output\\temp
+   # TEMP_DIR=output/temp
+   # Default speech recognition language (BCP-47), e.g., en-US, ru-RU
+   VIDEO2DOCS_LANGUAGE=en-US
+
+   # Web server settings
+   HOST=127.0.0.1
+   PORT=5000
+   FLASK_DEBUG=0
+
+   # Optional API keys
+   # HUGGINGFACEHUB_API_TOKEN=
+   # OPENAI_API_KEY=
    ```
 2. Install requirements:
    ```shell

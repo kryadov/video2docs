@@ -1,0 +1,36 @@
+# CI requirements for running unit tests (excludes heavy GPU deps)
+
+# Video processing
+pytube>=12.1.0
+pytubefix>=9.3.0
+opencv-python>=4.7.0
+moviepy>=2.0.0
+
+# Audio processing
+pydub>=0.25.1
+SpeechRecognition>=3.10.0
+
+# Image processing
+Pillow>=9.5.0
+scikit-image>=0.20.0
+
+# Document generation
+python-docx>=0.8.11
+odfpy>=1.4.1
+fpdf2>=2.7.4
+reportlab>=3.6.12
+
+# LLM and AI (lightweight client libs only)
+transformers>=4.28.1
+openai>=0.27.8
+langchain>=0.0.200
+langchain-community>=0.3.27
+
+# Utilities
+numpy>=1.24.3
+safetensors>=0.4.5
+accelerate>=1.0.1
+huggingface_hub[hf_xet]
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+Flask>=3.0.0

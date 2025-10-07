@@ -14,7 +14,8 @@ A Python application that converts YouTube videos or local video files to docume
 
 ## Requirements
 
-- Python 3.13
+- Python 3.10+ (3.11 recommended)
+- FFmpeg installed and on PATH (required by MoviePy and pydub)
 - CUDA-compatible GPU (optional, for faster processing)
 
 ## Installation
@@ -26,7 +27,7 @@ A Python application that converts YouTube videos or local video files to docume
    ```
 
 2. Create a virtual environment (recommended):
-   ```sell
+   ```shell
    python -m venv venv
    ```
 
@@ -95,7 +96,7 @@ python src/video2docs.py path/to/your/video.mp4 --format odt --output-dir my_doc
 ## How It Works
 
 1. **Video Processing**:
-   - For YouTube videos: Downloads the video using pytube
+   - For YouTube videos: Downloads the video using pytubefix
    - For local files: Uses the provided file path
    - Extracts frames from the video at regular intervals
 
@@ -119,12 +120,12 @@ python src/video2docs.py path/to/your/video.mp4 --format odt --output-dir my_doc
 
 When using OpenAI's ChatGPT API for content organization, it's important to understand how video length affects API usage and costs:
 
-- **Token Usage**: The application sends the first 4000 characters of the transcribed text to the LLM. This typically amounts to approximately 1000-1500 tokens, depending on the complexity of the language.
+- **Token Usage**: The application sends the first 1500 characters of the transcribed text to the LLM. This typically amounts to approximately 300-500 tokens, depending on the complexity of the language.
 
 - **Cost Estimation by Video Length**:
   - **Short videos (1-5 minutes)**: Approximately 500-1500 tokens, costing around $0.01-$0.03 with GPT-3.5 or $0.05-$0.15 with GPT-4.
-  - **Medium videos (5-15 minutes)**: The transcription may exceed 4000 characters, but the application still only sends the first 4000 characters, keeping costs similar to short videos.
-  - **Long videos (15+ minutes)**: Despite the length, API costs remain constant since only the first 4000 characters are processed. However, this may result in incomplete content organization for very long videos.
+  - **Medium videos (5-15 minutes)**: The transcription may exceed 1500 characters, but the application still only sends the first 1500 characters, keeping costs similar to short videos.
+  - **Long videos (15+ minutes)**: Despite the length, API costs remain constant since only the first 1500 characters are processed. However, this may result in incomplete content organization for very long videos.
 
 - **Optimizing Costs**:
   - For longer videos, consider breaking them into smaller segments for better content organization.
@@ -167,6 +168,7 @@ A simple Bootstrap-powered web UI is included.
    ```shell
    python -m src.webapp
    ```
+   Alternatively, on Windows you can run run_web.bat; on macOS/Linux, run run_web.sh
 4. Open http://localhost:5000 and log in with the configured credentials.
 
 Features:

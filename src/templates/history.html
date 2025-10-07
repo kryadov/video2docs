@@ -33,7 +33,12 @@
       </td>
       <td class="small">{{ it['started_at'] }}</td>
       <td class="small">{{ it['finished_at'] or '-' }}</td>
-      <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_detail', item_id=it['id']) }}">Details</a></td>
+      <td>
+        <form method="post" action="{{ url_for('history_delete', item_id=it['id']) }}" style="display:inline;" onsubmit="return confirm('Delete this conversion from history?');">
+          <button type="submit" class="btn btn-sm btn-outline-danger me-1">Delete</button>
+        </form>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_detail', item_id=it['id']) }}">Details</a>
+      </td>
     </tr>
   {% endfor %}
   </tbody>

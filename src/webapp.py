@@ -21,7 +21,9 @@ load_dotenv()
 # Configuration
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")
-OUTPUT_DIR = os.environ.get("OUTPUT_DIR", os.path.join(os.getcwd(), "output"))
+# Resolve OUTPUT_DIR to an absolute path based on the repository root (one level up from this file)
+_default_output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "output"))
+OUTPUT_DIR = os.environ.get("OUTPUT_DIR", _default_output_dir)
 TEMP_DIR = os.environ.get("TEMP_DIR")
 ALLOWED_EXTENSIONS = {"mp4", "mov", "avi", "mkv", "webm"}
 
@@ -128,6 +130,32 @@ def history_detail(item_id: str):
     return render_template("detail.html", item=item)
 
 
+@app.route("/history/<item_id>/delete", methods=["POST"])
+@login_required
+def history_delete(item_id: str):
+    items = _load_history()
+    index_to_delete = None
+    for idx, it in enumerate(items):
+        if it.get("id") == item_id:
+            index_to_delete = idx
+            break
+    if index_to_delete is None:
+        flash("Conversion not found", "warning")
+        return redirect(url_for("history"))
+
+    # Try to cancel running job if any (safe to call even if not running)
+    try:
+        job_manager.cancel(item_id)
+    except Exception:
+        pass
+
+    # Do not delete files on disk to avoid accidental data loss; this only removes from history
+    del items[index_to_delete]
+    _save_history(items)
+    flash("Conversion deleted from history", "success")
+    return redirect(url_for("history"))
+
+
 @app.route("/download/<item_id>")
 @login_required
 def download(item_id: str):
@@ -136,10 +164,33 @@ def download(item_id: str):
         flash("Conversion not found", "warning")
         return redirect(url_for("history"))
     result_path = item.get("result_path")
-    if not result_path or not os.path.exists(result_path):
-        flash("File not found for this conversion", "warning")
-        return redirect(url_for("history_detail", item_id=item_id))
-    return send_file(result_path, as_attachment=True)
+    # Fallback: if the stored absolute path does not exist (e.g., due to cwd changes),
+    # try to resolve by filename in the current OUTPUT_DIR
+    candidate_path = None
+    if result_path and not os.path.isabs(result_path):
+        candidate_path = os.path.join(OUTPUT_DIR, os.path.basename(result_path))
+    elif result_path:
+        candidate_path = result_path
+
+    if not candidate_path or not os.path.exists(candidate_path):
+        # Try another fallback using just the basename in OUTPUT_DIR
+        base = os.path.basename(result_path or "")
+        if base:
+            alt = os.path.join(OUTPUT_DIR, base)
+            if os.path.exists(alt):
+                candidate_path = alt
+                # Update history to fix the path for future requests
+                items = _load_history()
+                for it in items:
+                    if it.get("id") == item_id:
+                        it["result_path"] = candidate_path
+                        break
+                _save_history(items)
+        if not candidate_path or not os.path.exists(candidate_path):
+            flash("File not found for this conversion", "warning")
+            return redirect(url_for("history_detail", item_id=item_id))
+
+    return send_file(candidate_path, as_attachment=True)
 
 
 @app.route("/run", methods=["POST"])

@@ -282,23 +282,35 @@ class AudioProcessor:
 
                 # Save chunk to temporary file
                 chunk_path = f"{audio_path}_chunk_{start_time}_{end_time}.wav"
-                chunk.export(chunk_path, format="wav")
+                try:
+                    chunk.export(chunk_path, format="wav")
 
-                # Transcribe chunk
-                with sr.AudioFile(chunk_path) as source:
-                    audio_data = self.recognizer.record(source)
-                    logger.info(f"Transcribing chunk from {start_time} to {end_time} ms")
-                    text = self.recognizer.recognize_google(audio_data)
-                    logger.info(f"Transcribed chunk: {text}")
+                    # Transcribe chunk
+                    with sr.AudioFile(chunk_path) as source:
+                        audio_data = self.recognizer.record(source)
+                        logger.info(f"Transcribing chunk from {start_time} to {end_time} ms")
+                        try:
+                            text = self.recognizer.recognize_google(audio_data)
+                            logger.info(f"Transcribed chunk: {text}")
+                        except sr.UnknownValueError:
+                            logger.warning(f"Speech not understood for chunk {start_time}-{end_time} ms; leaving text empty.")
+                            text = ""
+                        except sr.RequestError as re_err:
+                            logger.error(f"Speech recognition service error for chunk {start_time}-{end_time} ms: {re_err}")
+                            text = ""
 
-                chunks.append({
-                    "text": text,
-                    "start_time": start_time / 1000.0,  # Convert to seconds
-                    "end_time": end_time / 1000.0  # Convert to seconds
-                })
-
-                # Clean up temporary file
-                os.remove(chunk_path)
+                    chunks.append({
+                        "text": text,
+                        "start_time": start_time / 1000.0,  # Convert to seconds
+                        "end_time": end_time / 1000.0  # Convert to seconds
+                    })
+                finally:
+                    # Clean up temporary file
+                    if os.path.exists(chunk_path):
+                        try:
+                            os.remove(chunk_path)
+                        except Exception as cleanup_err:
+                            logger.warning(f"Failed to remove temp chunk file {chunk_path}: {cleanup_err}")
 
             logger.info(f"Transcribed {len(chunks)} audio chunks")
             return chunks

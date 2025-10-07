@@ -47,6 +47,9 @@ A Python application that converts YouTube videos or local video files to docume
    ```
 
 5. (Optional) For GPU acceleration, make sure you have the appropriate CUDA drivers installed for your GPU.
+   ```shell
+   pip3 install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu130
+   ```
 
 6. (Optional) For OpenAI integration, create a `.env` file in the project root and add your API key:
    ```

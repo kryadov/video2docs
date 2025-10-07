@@ -350,5 +350,14 @@ def create_app() -> Flask:
     return app
 
 
+def main():
+    """Console entry point to run the web application."""
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "5000"))
+    debug_env = os.environ.get("FLASK_DEBUG") or os.environ.get("DEBUG") or "0"
+    debug = str(debug_env).lower() in ("1", "true", "yes", "on")
+    app.run(host=host, port=port, debug=debug)
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=int(os.environ.get("PORT", 5000)), debug=True)
+    main()

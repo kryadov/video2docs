@@ -11,15 +11,23 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="video2docs",
-    version="0.1.0",
+    version="0.1.2",
     author="Video2Docs Contributors",
     author_email="your.email@example.com",
     description="Convert YouTube or local videos to document formats (ODT, DOCX, PDF)",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/video2docs",
+    url="https://github.com/kryadov/video2docs",
     package_dir={"": "."},
     packages=["src"],
+    include_package_data=True,
+    package_data={
+        "src": [
+            "templates/*.html",
+            "static/*",
+            "static/**/*"
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.13",
@@ -34,6 +42,7 @@ setup(
     entry_points={
         "console_scripts": [
             "video2docs=src.video2docs:main",
+            "video2docs-web=src.webapp:main",
         ],
     },
 )

@@ -36,6 +36,6 @@ jobs:
           if [ -f requirements-ci.txt ]; then REQ=requirements-ci.txt; else REQ=requirements.txt; fi
           python -m pip install -r $REQ
 
-      - name: Run unit tests
+      - name: Run tests with pytest
         run: |
-          python -m unittest discover -s tests -p "test_*.py" -v
+          pytest -q

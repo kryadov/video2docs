@@ -115,7 +115,8 @@ def logout():
 @login_required
 def index():
     # New conversion form
-    return render_template("index.html")
+    default_language = os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US"
+    return render_template("index.html", default_language=default_language)
 
 
 @app.route("/history")

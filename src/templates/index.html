@@ -23,6 +23,10 @@
     <label class="form-label">Output File Name (without extension)</label>
     <input type="text" name="output_name" class="form-control" placeholder="Leave empty to derive from input">
   </div>
+  <div class="col-md-4">
+    <label class="form-label">Audio language</label>
+    <input type="text" name="language" class="form-control" value="{{ default_language }}" placeholder="e.g., en-US, fr-FR">
+  </div>
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Start Conversion</button>
     <a href="{{ url_for('history') }}" class="btn btn-secondary">View History</a>

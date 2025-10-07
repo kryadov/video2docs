@@ -163,6 +163,27 @@ You can customize the behavior of the application by modifying the parameters in
 - Adjust the frame extraction interval by modifying the `interval` parameter in the `extract_frames` method
 - Modify the slide detection threshold by changing the `threshold` parameter in the `detect_slides` method
 
+## Running tests
+
+To run the test suite locally using pytest:
+
+1. (Recommended) Create and activate a virtual environment.
+2. Install test dependencies:
+   ```shell
+   pip install -r requirements-ci.txt
+   ```
+3. Run the tests:
+   ```shell
+   pytest -q
+   ```
+   For more detailed output, use:
+   ```shell
+   pytest -v
+   ```
+
+Continuous Integration:
+- This repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that runs `pytest` automatically on pushes and pull requests.
+
 ## Troubleshooting
 
 - **GPU not being used**: Make sure you have the appropriate CUDA drivers installed and that PyTorch can detect your GPU. You can check this by running `torch.cuda.is_available()` in a Python shell.

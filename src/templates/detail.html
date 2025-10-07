@@ -14,6 +14,8 @@
           <dd class="col-sm-8">{{ item['format']|upper }}</dd>
           <dt class="col-sm-4">Output name</dt>
           <dd class="col-sm-8">{{ item['output_name'] }}</dd>
+          <dt class="col-sm-4">Language</dt>
+          <dd class="col-sm-8">{{ item.get('language') or '-' }}</dd>
           <dt class="col-sm-4">Status</dt>
           <dd class="col-sm-8">
             {% if item['status'] == 'completed' %}
@@ -83,6 +85,10 @@
   <div class="col-md-3">
     <label class="form-label">Output File Name</label>
     <input type="text" name="output_name" class="form-control" value="{{ item['output_name'] }}">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Audio language</label>
+    <input type="text" name="language" class="form-control" value="{{ item.get('language') or 'en-US' }}">
   </div>
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Create New Conversion</button>

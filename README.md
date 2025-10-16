@@ -239,3 +239,34 @@ Notes:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+## Run as a service
+
+- Linux (systemd):
+  - Ensure dependencies are installed and, optionally, create a virtual environment in ./venv
+  - Install and start the service (requires sudo):
+    ```bash
+    sudo ./install_service_linux.sh [--user USER] [--name SERVICE_NAME]
+    # default service name: video2docs
+    # view logs:
+    sudo journalctl -u video2docs -f
+    ```
+
+- Windows (Service via NSSM):
+  - Install NSSM (https://nssm.cc/download) and ensure nssm.exe is in PATH
+  - Install and start the service from a terminal opened in the repository root:
+    ```bat
+    install_service_windows.bat [ServiceName]
+    rem default name: Video2Docs
+    ```
+  - Manage with NSSM commands:
+    ```bat
+    nssm status Video2Docs
+    nssm stop Video2Docs
+    nssm remove Video2Docs confirm
+    ```
+
+Notes
+- The application loads environment variables from .env in the repository root if present.
+- By default, the service runs the Flask web UI: `python -m src.webapp`.

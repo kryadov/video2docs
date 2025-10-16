@@ -159,7 +159,7 @@ Note: These estimates are based on OpenAI's pricing as of 2023. Check [OpenAI's 
 
 You can customize the behavior of the application by modifying the parameters in the `src/video2docs.py` file:
 
-- Change the default LLM model by modifying the `model_name` parameter in the `LLMProcessor` class
+- Change the default LLM model via environment variable VIDEO2DOCS_LLM_MODEL in your .env file (or by modifying the `model_name` parameter in the `LLMProcessor` class)
 - Adjust the frame extraction interval by modifying the `interval` parameter in the `extract_frames` method
 - Modify the slide detection threshold by changing the `threshold` parameter in the `detect_slides` method
 

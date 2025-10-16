@@ -337,9 +337,13 @@ class LLMProcessor:
             logger.info("Using OpenAI for LLM processing")
             self.llm = OpenAI(temperature=0.1)
         else:
-            # Default to a HuggingFace model
-            self.model_name = model_name or "google/flan-t5-large"
-            logger.info(f"Using HuggingFace model: {self.model_name}")
+            # Default to a HuggingFace model (allow override via .env)
+            env_model = os.getenv("VIDEO2DOCS_LLM_MODEL", "").strip()
+            self.model_name = (model_name or env_model or "google/flan-t5-large")
+            if not model_name and env_model:
+                logger.info(f"Using HuggingFace model from env VIDEO2DOCS_LLM_MODEL: {self.model_name}")
+            else:
+                logger.info(f"Using HuggingFace model: {self.model_name}")
 
             # Set device based on GPU availability and preference
             device = "cuda" if self.use_gpu else "cpu"

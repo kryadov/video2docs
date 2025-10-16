@@ -21,7 +21,7 @@ from .jobs import job_manager
 load_dotenv()
 
 # Load LLM models configuration
-_MODELS_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "llm_models.json")
+_MODELS_CONFIG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "config", "llm_models.json"))
 LLM_MODELS_CONFIG: Dict[str, Any] = {
     "default": "google/flan-t5-large",
     "models": [{"id": "google/flan-t5-large", "label": "google/flan-t5-large"}]

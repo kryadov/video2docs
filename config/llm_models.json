@@ -7,6 +7,6 @@
     {"id": "microsoft/Phi-3.5-mini-instruct", "label": "microsoft/Phi-3.5-mini-instruct"},
     {"id": "HuggingFaceTB/SmolLM-135M", "label": "HuggingFaceTB/SmolLM-135M"},
     {"id": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "label": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
-    {"id": "google/flan-ul2", "label": "google/flan-ul2"},
+    {"id": "google/flan-ul2", "label": "google/flan-ul2"}
   ]
 }

@@ -5,11 +5,13 @@ import os
 import uuid
 import json
 import datetime
+import threading
 from typing import Dict, Any, List
 
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from huggingface_hub import snapshot_download
 
 # Import the converter
 from .video2docs import Video2Docs
@@ -17,6 +19,21 @@ from .jobs import job_manager
 
 # Load environment variables
 load_dotenv()
+
+# Load LLM models configuration
+_MODELS_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "llm_models.json")
+LLM_MODELS_CONFIG: Dict[str, Any] = {
+    "default": "google/flan-t5-large",
+    "models": [{"id": "google/flan-t5-large", "label": "google/flan-t5-large"}]
+}
+try:
+    if os.path.exists(_MODELS_CONFIG_PATH):
+        with open(_MODELS_CONFIG_PATH, "r", encoding="utf-8") as f:
+            LLM_MODELS_CONFIG = json.load(f)
+except Exception:
+    pass
+LLM_MODELS: List[Dict[str, Any]] = LLM_MODELS_CONFIG.get("models", [])
+DEFAULT_LLM_MODEL: str = LLM_MODELS_CONFIG.get("default") or (LLM_MODELS[0]["id"] if LLM_MODELS else "google/flan-t5-large")
 
 # Configuration
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
@@ -38,6 +55,26 @@ app.secret_key = os.environ.get("SECRET_KEY", "video2docs-secret-key")
 # Ensure output dir exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 HISTORY_FILE = os.path.join(OUTPUT_DIR, "conversions.json")
+
+# Trigger background pre-download of all configured models (non-blocking)
+
+def _prefetch_models():
+    def worker():
+        for entry in LLM_MODELS:
+            mid = entry.get("id") if isinstance(entry, dict) else str(entry)
+            if not mid:
+                continue
+            try:
+                # This will skip re-download if present in local HF cache
+                snapshot_download(repo_id=mid, local_files_only=False)
+            except Exception:
+                # Ignore failures (e.g., non-transformers GGUF repos), do not block app
+                pass
+    t = threading.Thread(target=worker, name="llm-model-prefetch", daemon=True)
+    t.start()
+
+if str(os.environ.get("PREFETCH_LLM_MODELS", "1")).lower() in ("1", "true", "yes", "on"):
+    _prefetch_models()
 
 
 def _load_history() -> List[Dict[str, Any]]:
@@ -116,7 +153,7 @@ def logout():
 def index():
     # New conversion form
     default_language = os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US"
-    return render_template("index.html", default_language=default_language)
+    return render_template("index.html", default_language=default_language, models=LLM_MODELS, default_model=DEFAULT_LLM_MODEL)
 
 
 @app.route("/history")
@@ -206,6 +243,7 @@ def run_conversion():
     output_format = request.form.get("format", "docx").strip().lower()
     output_name = request.form.get("output_name", "").strip()
     language = (request.form.get("language") or os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US").strip()
+    model_name = (request.form.get("llm_model") or DEFAULT_LLM_MODEL).strip()
 
     uploaded_file_path = None
     if "file" in request.files and request.files["file"] and request.files["file"].filename:
@@ -245,6 +283,7 @@ def run_conversion():
         "format": output_format,
         "output_name": output_name,
         "language": language,
+        "model": model_name,
         "status": "running",
         "result_path": None,
         "started_at": started_at,
@@ -276,7 +315,7 @@ def run_conversion():
 
     # Enqueue background job
     def job_fn(progress_cb=None, cancel_event=None):
-        converter = Video2Docs(output_dir=OUTPUT_DIR, temp_dir=per_job_temp_dir)
+        converter = Video2Docs(output_dir=OUTPUT_DIR, temp_dir=per_job_temp_dir, model_name=model_name)
         return converter.process(actual_input, output_format=output_format, output_name=output_name, language=language,
                                  progress_callback=progress_cb, cancel_event=cancel_event)
 
@@ -285,6 +324,7 @@ def run_conversion():
         "format": output_format,
         "output_name": output_name,
         "language": language,
+        "model": model_name,
     })
     flash("Conversion started in background", "info")
     return redirect(url_for("running", item_id=item_id))

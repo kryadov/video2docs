@@ -23,6 +23,14 @@
     <label class="form-label">Output File Name (without extension)</label>
     <input type="text" name="output_name" class="form-control" placeholder="Leave empty to derive from input">
   </div>
+  <div class="col-md-6">
+    <label class="form-label">Summarization model</label>
+    <select name="llm_model" class="form-select">
+      {% for m in models %}
+        <option value="{{ m.id }}" {% if m.id == default_model %}selected{% endif %}>{{ m.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
   <div class="col-md-4">
     <label class="form-label">Audio language</label>
     <select name="language" class="form-select">

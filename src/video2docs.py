@@ -44,7 +44,7 @@ from fpdf import FPDF
 
 # LLM and AI
 import torch
-from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM, AutoTokenizer
 from langchain_community.llms import OpenAI
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import PromptTemplate
@@ -349,24 +349,39 @@ class LLMProcessor:
             device = "cuda" if self.use_gpu else "cpu"
             logger.info(f"Using device: {device}")
 
-            # Download and load the model locally
+            # Download and load the model locally (try Seq2Seq first, then Causal LM)
             logger.info(f"Downloading and loading model: {self.model_name}")
+            model = None
+            tokenizer = None
+            is_seq2seq = False
             try:
                 model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+                is_seq2seq = True
+            except Exception as e1:
+                logger.debug(f"Seq2Seq load failed for {self.model_name}: {e1}")
+                try:
+                    model = AutoModelForCausalLM.from_pretrained(self.model_name)
+                    is_seq2seq = False
+                except Exception as e2:
+                    logger.error(f"Error loading model {self.model_name} as Seq2Seq or Causal: {e1} | {e2}")
+                    logger.error("Please check your internet connection and ensure you have enough disk space.")
+                    logger.error("If the error persists, try a different model or check if it is available on Hugging Face Hub.")
+                    raise RuntimeError(f"Failed to load model {self.model_name}: {e2}") from e2
+
+            try:
                 tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            except Exception as e_tok:
+                logger.error(f"Error loading tokenizer for {self.model_name}: {e_tok}")
+                raise RuntimeError(f"Failed to load tokenizer for model {self.model_name}: {e_tok}") from e_tok
 
-                # Move model to GPU if available
-                model = model.to(device)
-                logger.info(f"Successfully loaded model {self.model_name} to {device}")
-            except Exception as e:
-                logger.error(f"Error loading model {self.model_name}: {e}")
-                logger.error("Please check your internet connection and ensure you have enough disk space.")
-                logger.error("If the error persists, try using a different model or check if the model is available on Hugging Face Hub.")
-                raise RuntimeError(f"Failed to load model {self.model_name}: {e}") from e
+            # Move model to GPU if available
+            model = model.to(device)
+            logger.info(f"Successfully loaded model {self.model_name} to {device} (seq2seq={is_seq2seq})")
 
-            # Create a text generation pipeline
+            # Create a text generation pipeline (task depends on architecture)
+            task = "text2text-generation" if is_seq2seq else "text-generation"
             text_generation_pipeline = pipeline(
-                "text2text-generation",
+                task,
                 model=model,
                 tokenizer=tokenizer,
                 device=0 if device == "cuda" else -1,
@@ -733,13 +748,14 @@ class DocumentGenerator:
 class Video2Docs:
     """Main class for video to document conversion."""
 
-    def __init__(self, output_dir: str = "output", temp_dir: str = None, use_gpu: bool = True):
+    def __init__(self, output_dir: str = "output", temp_dir: str = None, use_gpu: bool = True, model_name: str = None):
         """Initialize the converter.
 
         Args:
             output_dir: Directory to save output documents
             temp_dir: Directory for temporary files
             use_gpu: Whether to use GPU for processing
+            model_name: Optional Hugging Face model name to use for summarization
         """
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -756,7 +772,7 @@ class Video2Docs:
         # Initialize components
         self.video_processor = VideoProcessor(temp_dir=self.temp_dir)
         self.audio_processor = AudioProcessor(use_gpu=self.use_gpu)
-        self.llm_processor = LLMProcessor(use_openai=False, use_gpu=self.use_gpu)
+        self.llm_processor = LLMProcessor(model_name=model_name, use_openai=False, use_gpu=self.use_gpu)
         self.document_generator = DocumentGenerator(output_dir=self.output_dir)
 
     def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, language: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:

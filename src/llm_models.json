@@ -1,0 +1,12 @@
+{
+  "default": "google/flan-t5-large",
+  "models": [
+    {"id": "google/flan-t5-large", "label": "google/flan-t5-large"},
+    {"id": "openai/gpt-oss-20b", "label": "openai/gpt-oss-20b"},
+    {"id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0", "label": "TinyLlama/TinyLlama-1.1B-Chat-v1.0"},
+    {"id": "microsoft/Phi-3.5-mini-instruct", "label": "microsoft/Phi-3.5-mini-instruct"},
+    {"id": "HuggingFaceTB/SmolLM-135M", "label": "HuggingFaceTB/SmolLM-135M"},
+    {"id": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "label": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"},
+    {"id": "google/flan-ul2", "label": "google/flan-ul2"},
+  ]
+}

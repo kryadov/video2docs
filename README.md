@@ -81,7 +81,9 @@ python src/video2docs.py path/to/your/video.mp4 --format pdf
 - `--format`, `-f`: Output document format (choices: "docx", "odt", "pdf", default: "docx")
 - `--output-dir`, `-o`: Directory to save output documents (default: "output")
 - `--temp-dir`, `-t`: Directory for temporary files (default: auto-generated)
-- `--language`, `-l`: Language code for speech recognition (BCP-47, e.g., `en-US`, `ru-RU`). Defaults to `VIDEO2DOCS_LANGUAGE` env var or `en-US`.
+- `--language`, `-l`: Language code for speech recognition. For Google backend use BCP-47 (e.g., `en-US`, `ru-RU`). For Whisper use ISO-639-1 (e.g., `en`, `ru`) or `auto` for automatic detection. Defaults to `VIDEO2DOCS_LANGUAGE` env var or `en-US`.
+- `--asr-backend`: ASR engine to use: `google` (default) or `whisper`.
+- `--whisper-model`: Whisper model size/name (e.g., `tiny`, `base`, `small`, `medium`, `large`). Can also be set via `VIDEO2DOCS_WHISPER_MODEL`.
 - `--no-gpu`: Disable GPU usage
 - `--verbose`, `-v`: Enable verbose logging
 
@@ -101,18 +103,52 @@ python src/video2docs.py path/to/your/video.mp4 --format odt --output-dir my_doc
 
 ### Multi-language transcription
 
-By default, English (`en-US`) is used for speech recognition. To transcribe in other languages, specify a BCP-47 language code:
+You can transcribe audio in many languages using either the default Google Web Speech backend or the optional offline Whisper backend.
+
+- Google backend (online): expects BCP-47 codes like `en-US`, `ru-RU`, `es-ES`.
+- Whisper backend (offline, multilingual): accepts ISO‑639‑1 codes like `en`, `ru`, `es`, or `auto` to automatically detect the language.
+
+#### Using Google (default)
+
+By default, English (`en-US`) is used. To use another language:
 
 - CLI example (Russian):
   ```
   python src/video2docs.py path/to/your/video.mp4 -l ru-RU
   ```
-- Web UI: set `VIDEO2DOCS_LANGUAGE` in your `.env` before starting the app, for example:
+- Web UI / env var:
   ```env
   VIDEO2DOCS_LANGUAGE=ru-RU
   ```
 
-Supported codes are those supported by the Google Web Speech API (e.g., en-US, en-GB, ru-RU, es-ES, de-DE, fr-FR, etc.).
+#### Using Whisper (offline, multilingual)
+
+1) Install Whisper once (plus FFmpeg must be installed on your system):
+```
+pip install openai-whisper
+```
+
+2) Run with Whisper backend and auto language detection:
+```
+python src/video2docs.py path/to/your/video.mp4 --asr-backend whisper -l auto
+```
+
+3) Or specify the language and model size explicitly:
+```
+python src/video2docs.py path/to/your/video.mp4 --asr-backend whisper \
+  --whisper-model small -l ru
+```
+
+You can also configure via env vars in your `.env`:
+```env
+VIDEO2DOCS_ASR_BACKEND=whisper
+VIDEO2DOCS_WHISPER_MODEL=small
+VIDEO2DOCS_LANGUAGE=auto
+```
+
+Notes:
+- Whisper uses your GPU automatically if available; otherwise CPU.
+- Model sizes: `tiny`, `base`, `small`, `medium`, `large` (bigger = slower but more accurate).
 
 ## How It Works
 

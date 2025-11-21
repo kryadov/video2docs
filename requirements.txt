@@ -7,6 +7,8 @@ moviepy>=2.0.0  # For video manipulation
 # Audio processing
 pydub>=0.25.1  # For audio manipulation
 SpeechRecognition>=3.10.0  # For speech-to-text
+# Optional multilingual offline ASR (install to enable Whisper backend)
+openai-whisper>=20250625
 
 # Image processing
 Pillow>=9.5.0  # For image manipulation

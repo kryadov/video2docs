@@ -28,6 +28,12 @@ from moviepy import VideoFileClip
 import speech_recognition as sr
 from pydub import AudioSegment
 
+# Whisper ASR (optional)
+try:
+    import whisper  # openai-whisper
+except Exception:  # pragma: no cover - optional dependency
+    whisper = None
+
 # Image processing
 from PIL import Image
 import numpy as np
@@ -44,7 +50,7 @@ from fpdf import FPDF
 
 # LLM and AI
 import torch
-from transformers import pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM, AutoTokenizer
+from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 from langchain_community.llms import OpenAI
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import PromptTemplate
@@ -250,27 +256,95 @@ class VideoProcessor:
 class AudioProcessor:
     """Handles audio transcription."""
 
-    def __init__(self, use_gpu: bool = True):
+    def __init__(self, use_gpu: bool = True, asr_backend: str = "google", whisper_model_name: Optional[str] = None):
         """Initialize the audio processor.
 
         Args:
             use_gpu: Whether to use GPU for processing
+            asr_backend: ASR engine to use: "google" (default) or "whisper"
+            whisper_model_name: Whisper model size/name (e.g., tiny, base, small, medium, large)
         """
         self.use_gpu = use_gpu and torch.cuda.is_available()
+        self.asr_backend = (asr_backend or "google").lower()
         self.recognizer = sr.Recognizer()
-        logger.info(f"Initialized audio processor (GPU: {self.use_gpu})")
+        self.whisper_model_name = whisper_model_name or os.environ.get("VIDEO2DOCS_WHISPER_MODEL", "small")
+        self._whisper_model = None  # lazy-loaded
+        logger.info(f"Initialized audio processor (GPU: {self.use_gpu}, ASR: {self.asr_backend})")
+
+    def _ensure_whisper(self):
+        if self._whisper_model is not None:
+            return
+        if whisper is None:
+            raise RuntimeError(
+                "Whisper backend requested but not installed. Install with: pip install openai-whisper\n"
+                "Also ensure ffmpeg is installed and on PATH."
+            )
+        device = "cuda" if self.use_gpu else "cpu"
+        logger.info(f"Loading Whisper model '{self.whisper_model_name}' on {device}")
+        try:
+            self._whisper_model = whisper.load_model(self.whisper_model_name, device=device)
+        except Exception as e:
+            logger.error(f"Failed to load Whisper model '{self.whisper_model_name}': {e}")
+            raise
+
+    @staticmethod
+    def _bcp47_to_iso639(language: Optional[str]) -> Optional[str]:
+        """Map BCP-47 like 'en-US' to ISO-639-1 like 'en'. Returns None if not set or 'auto'."""
+        if not language:
+            return None
+        lang = language.strip()
+        if lang.lower() == "auto":
+            return None
+        # take first token before '-' or '_'
+        return lang.split("-")[0].split("_")[0].lower()
 
     def transcribe_audio(self, audio_path: str, chunk_size: int = 60000, language: str = "en-US") -> List[Dict[str, Union[str, float, float]]]:
         """Transcribe audio file to text.
 
         Args:
             audio_path: Path to the audio file
-            chunk_size: Size of audio chunks in milliseconds
+            chunk_size: Size of audio chunks in milliseconds (used for Google backend)
+            language: Language code. For Google, BCP-47 (e.g., en-US, ru-RU). For Whisper, ISO-639-1 (e.g., en, ru) or 'auto'.
 
         Returns:
             List of dictionaries with text, start_time, and end_time
         """
         logger.info(f"Transcribing audio: {audio_path}")
+        if self.asr_backend == "whisper":
+            # Whisper path with segment-level timestamps
+            try:
+                self._ensure_whisper()
+                iso_lang = self._bcp47_to_iso639(language)
+                # Configure fp16 usage automatically
+                fp16 = self.use_gpu
+                logger.info(f"Running Whisper transcription (language={iso_lang or 'auto'}, fp16={fp16})")
+                result = self._whisper_model.transcribe(
+                    audio_path,
+                    language=iso_lang,
+                    fp16=fp16,
+                    verbose=False
+                )
+                segments = result.get("segments", []) or []
+                if not segments and result.get("text"):
+                    # Fallback single segment with no timestamps
+                    return [{"text": result["text"], "start_time": 0.0, "end_time": 0.0}]
+                chunks: List[Dict[str, Union[str, float, float]]] = []
+                for seg in segments:
+                    chunks.append({
+                        "text": seg.get("text", "").strip(),
+                        "start_time": float(seg.get("start", 0.0)),
+                        "end_time": float(seg.get("end", 0.0)),
+                    })
+                detected_lang = result.get("language")
+                if detected_lang:
+                    logger.info(f"Whisper detected language: {detected_lang}")
+                logger.info(f"Transcribed {len(chunks)} segments with Whisper")
+                return chunks
+            except Exception as e:
+                logger.error(f"Error transcribing with Whisper: {e}")
+                raise
+
+        # Default Google SpeechRecognition path (chunked)
         try:
             audio = AudioSegment.from_file(audio_path)
             duration = len(audio)
@@ -291,7 +365,7 @@ class AudioProcessor:
                         logger.info(f"Transcribing chunk from {start_time} to {end_time} ms")
                         try:
                             text = self.recognizer.recognize_google(audio_data, language=language)
-                            logger.info(f"Transcribed chunk: {text}")
+                            logger.debug(f"Transcribed chunk text length: {len(text)}")
                         except sr.UnknownValueError:
                             logger.warning(f"Speech not understood for chunk {start_time}-{end_time} ms; leaving text empty.")
                             text = ""
@@ -312,7 +386,7 @@ class AudioProcessor:
                         except Exception as cleanup_err:
                             logger.warning(f"Failed to remove temp chunk file {chunk_path}: {cleanup_err}")
 
-            logger.info(f"Transcribed {len(chunks)} audio chunks")
+            logger.info(f"Transcribed {len(chunks)} audio chunks with Google Speech Recognition")
             return chunks
         except Exception as e:
             logger.error(f"Error transcribing audio: {e}")
@@ -337,51 +411,32 @@ class LLMProcessor:
             logger.info("Using OpenAI for LLM processing")
             self.llm = OpenAI(temperature=0.1)
         else:
-            # Default to a HuggingFace model (allow override via .env)
-            env_model = os.getenv("VIDEO2DOCS_LLM_MODEL", "").strip()
-            self.model_name = (model_name or env_model or "google/flan-t5-large")
-            if not model_name and env_model:
-                logger.info(f"Using HuggingFace model from env VIDEO2DOCS_LLM_MODEL: {self.model_name}")
-            else:
-                logger.info(f"Using HuggingFace model: {self.model_name}")
+            # Default to a HuggingFace model
+            self.model_name = model_name or "google/flan-t5-large"
+            logger.info(f"Using HuggingFace model: {self.model_name}")
 
             # Set device based on GPU availability and preference
             device = "cuda" if self.use_gpu else "cpu"
             logger.info(f"Using device: {device}")
 
-            # Download and load the model locally (try Seq2Seq first, then Causal LM)
+            # Download and load the model locally
             logger.info(f"Downloading and loading model: {self.model_name}")
-            model = None
-            tokenizer = None
-            is_seq2seq = False
             try:
                 model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
-                is_seq2seq = True
-            except Exception as e1:
-                logger.debug(f"Seq2Seq load failed for {self.model_name}: {e1}")
-                try:
-                    model = AutoModelForCausalLM.from_pretrained(self.model_name)
-                    is_seq2seq = False
-                except Exception as e2:
-                    logger.error(f"Error loading model {self.model_name} as Seq2Seq or Causal: {e1} | {e2}")
-                    logger.error("Please check your internet connection and ensure you have enough disk space.")
-                    logger.error("If the error persists, try a different model or check if it is available on Hugging Face Hub.")
-                    raise RuntimeError(f"Failed to load model {self.model_name}: {e2}") from e2
-
-            try:
                 tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            except Exception as e_tok:
-                logger.error(f"Error loading tokenizer for {self.model_name}: {e_tok}")
-                raise RuntimeError(f"Failed to load tokenizer for model {self.model_name}: {e_tok}") from e_tok
 
-            # Move model to GPU if available
-            model = model.to(device)
-            logger.info(f"Successfully loaded model {self.model_name} to {device} (seq2seq={is_seq2seq})")
+                # Move model to GPU if available
+                model = model.to(device)
+                logger.info(f"Successfully loaded model {self.model_name} to {device}")
+            except Exception as e:
+                logger.error(f"Error loading model {self.model_name}: {e}")
+                logger.error("Please check your internet connection and ensure you have enough disk space.")
+                logger.error("If the error persists, try using a different model or check if the model is available on Hugging Face Hub.")
+                raise RuntimeError(f"Failed to load model {self.model_name}: {e}") from e
 
-            # Create a text generation pipeline (task depends on architecture)
-            task = "text2text-generation" if is_seq2seq else "text-generation"
+            # Create a text generation pipeline
             text_generation_pipeline = pipeline(
-                task,
+                "text2text-generation",
                 model=model,
                 tokenizer=tokenizer,
                 device=0 if device == "cuda" else -1,
@@ -748,14 +803,24 @@ class DocumentGenerator:
 class Video2Docs:
     """Main class for video to document conversion."""
 
-    def __init__(self, output_dir: str = "output", temp_dir: str = None, use_gpu: bool = True, model_name: str = None):
+    def __init__(
+        self,
+        output_dir: str = "output",
+        temp_dir: str = None,
+        use_gpu: bool = True,
+        asr_backend: Optional[str] = None,
+        whisper_model_name: Optional[str] = "large",
+        model_name: Optional[str] = None,
+    ):
         """Initialize the converter.
 
         Args:
             output_dir: Directory to save output documents
             temp_dir: Directory for temporary files
             use_gpu: Whether to use GPU for processing
-            model_name: Optional Hugging Face model name to use for summarization
+            asr_backend: ASR engine to use: "google" (default) or "whisper" (can also set via VIDEO2DOCS_ASR_BACKEND)
+            whisper_model_name: Whisper model name (e.g., tiny, base, small, medium, large)
+            model_name: LLM model id/name to use for summarization (overrides env VIDEO2DOCS_LLM_MODEL if provided)
         """
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -771,8 +836,11 @@ class Video2Docs:
 
         # Initialize components
         self.video_processor = VideoProcessor(temp_dir=self.temp_dir)
-        self.audio_processor = AudioProcessor(use_gpu=self.use_gpu)
-        self.llm_processor = LLMProcessor(model_name=model_name, use_openai=False, use_gpu=self.use_gpu)
+        backend = (asr_backend or os.environ.get("VIDEO2DOCS_ASR_BACKEND", "whisper")).lower()
+        self.audio_processor = AudioProcessor(use_gpu=self.use_gpu, asr_backend=backend, whisper_model_name=whisper_model_name)
+        # Choose LLM model: explicit arg has priority, then environment variable, then LLMProcessor's default
+        chosen_llm_model = model_name or os.environ.get("VIDEO2DOCS_LLM_MODEL")
+        self.llm_processor = LLMProcessor(model_name=chosen_llm_model, use_openai=False, use_gpu=self.use_gpu)
         self.document_generator = DocumentGenerator(output_dir=self.output_dir)
 
     def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, language: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:
@@ -974,7 +1042,22 @@ def main():
     parser.add_argument(
         "--language", "-l",
         default=os.environ.get("VIDEO2DOCS_LANGUAGE", "en-US"),
-        help="Language code (BCP-47) for speech recognition, e.g., en-US, ru-RU"
+        help=(
+            "Language code for speech recognition. "
+            "Google backend expects BCP-47 (e.g., en-US, ru-RU). "
+            "Whisper accepts ISO-639-1 (e.g., en, ru) or 'auto' for detection."
+        )
+    )
+    parser.add_argument(
+        "--asr-backend",
+        choices=["google", "whisper"],
+        default=os.environ.get("VIDEO2DOCS_ASR_BACKEND", "google").lower(),
+        help="ASR engine to use: 'google' (default) or 'whisper'"
+    )
+    parser.add_argument(
+        "--whisper-model",
+        default=os.environ.get("VIDEO2DOCS_WHISPER_MODEL", "small"),
+        help="Whisper model size/name (tiny, base, small, medium, large, etc.)"
     )
 
     args = parser.parse_args()
@@ -987,7 +1070,9 @@ def main():
     converter = Video2Docs(
         output_dir=args.output_dir,
         temp_dir=args.temp_dir,
-        use_gpu=not args.no_gpu
+        use_gpu=not args.no_gpu,
+        asr_backend=args.asr_backend,
+        whisper_model_name=args.whisper_model,
     )
 
     # Process video

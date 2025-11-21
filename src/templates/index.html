@@ -23,6 +23,7 @@
     <label class="form-label">Output File Name (without extension)</label>
     <input type="text" name="output_name" class="form-control" placeholder="Leave empty to derive from input">
   </div>
+  {% if show_llm_selector %}
   <div class="col-md-6">
     <label class="form-label">Summarization model</label>
     <select name="llm_model" class="form-select">
@@ -31,6 +32,7 @@
       {% endfor %}
     </select>
   </div>
+  {% endif %}
   <div class="col-md-4">
     <label class="form-label">Audio language</label>
     <select name="language" class="form-select">

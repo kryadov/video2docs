@@ -153,7 +153,17 @@ def logout():
 def index():
     # New conversion form
     default_language = os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US"
-    return render_template("index.html", default_language=default_language, models=LLM_MODELS, default_model=DEFAULT_LLM_MODEL)
+    asr_backend = str(os.environ.get("VIDEO2DOCS_ASR_BACKEND", "google")).lower()
+    show_llm_selector = asr_backend != "whisper"
+    # Allow environment to override the preselected model
+    effective_default_model = os.environ.get("VIDEO2DOCS_LLM_MODEL") or DEFAULT_LLM_MODEL
+    return render_template(
+        "index.html",
+        default_language=default_language,
+        models=LLM_MODELS,
+        default_model=effective_default_model,
+        show_llm_selector=show_llm_selector,
+    )
 
 
 @app.route("/history")
@@ -243,7 +253,9 @@ def run_conversion():
     output_format = request.form.get("format", "docx").strip().lower()
     output_name = request.form.get("output_name", "").strip()
     language = (request.form.get("language") or os.environ.get("VIDEO2DOCS_LANGUAGE") or "en-US").strip()
-    model_name = (request.form.get("llm_model") or DEFAULT_LLM_MODEL).strip()
+    # If the selector is hidden, take from env or fallback to config default
+    selected_or_env_model = request.form.get("llm_model") or os.environ.get("VIDEO2DOCS_LLM_MODEL") or DEFAULT_LLM_MODEL
+    model_name = str(selected_or_env_model).strip()
 
     uploaded_file_path = None
     if "file" in request.files and request.files["file"] and request.files["file"].filename:

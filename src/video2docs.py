@@ -803,7 +803,15 @@ class DocumentGenerator:
 class Video2Docs:
     """Main class for video to document conversion."""
 
-    def __init__(self, output_dir: str = "output", temp_dir: str = None, use_gpu: bool = True, asr_backend: Optional[str] = None, whisper_model_name: Optional[str] = "large"):
+    def __init__(
+        self,
+        output_dir: str = "output",
+        temp_dir: str = None,
+        use_gpu: bool = True,
+        asr_backend: Optional[str] = None,
+        whisper_model_name: Optional[str] = "large",
+        model_name: Optional[str] = None,
+    ):
         """Initialize the converter.
 
         Args:
@@ -812,6 +820,7 @@ class Video2Docs:
             use_gpu: Whether to use GPU for processing
             asr_backend: ASR engine to use: "google" (default) or "whisper" (can also set via VIDEO2DOCS_ASR_BACKEND)
             whisper_model_name: Whisper model name (e.g., tiny, base, small, medium, large)
+            model_name: LLM model id/name to use for summarization (overrides env VIDEO2DOCS_LLM_MODEL if provided)
         """
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -829,7 +838,9 @@ class Video2Docs:
         self.video_processor = VideoProcessor(temp_dir=self.temp_dir)
         backend = (asr_backend or os.environ.get("VIDEO2DOCS_ASR_BACKEND", "whisper")).lower()
         self.audio_processor = AudioProcessor(use_gpu=self.use_gpu, asr_backend=backend, whisper_model_name=whisper_model_name)
-        self.llm_processor = LLMProcessor(use_openai=False, use_gpu=self.use_gpu)
+        # Choose LLM model: explicit arg has priority, then environment variable, then LLMProcessor's default
+        chosen_llm_model = model_name or os.environ.get("VIDEO2DOCS_LLM_MODEL")
+        self.llm_processor = LLMProcessor(model_name=chosen_llm_model, use_openai=False, use_gpu=self.use_gpu)
         self.document_generator = DocumentGenerator(output_dir=self.output_dir)
 
     def process(self, input_path: str, output_format: str = "docx", output_name: Optional[str] = None, language: Optional[str] = None, progress_callback=None, cancel_event=None) -> str:

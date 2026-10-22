@@ -19,7 +19,7 @@ fpdf2>=2.7.4  # For PDF format
 reportlab>=3.6.12  # Enhanced PDF generation
 
 # LLM and AI
-torch>=2.0.0  # PyTorch for GPU support
+torch>=2.14.1  # PyTorch for GPU support
 transformers>=4.28.1  # Hugging Face transformers
 openai>=0.27.8  # OpenAI API (optional)
 langchain>=0.0.200  # For building LLM applications

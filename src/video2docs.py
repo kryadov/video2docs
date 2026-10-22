@@ -47,8 +47,8 @@ import torch
 from transformers import pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM, AutoTokenizer
 from langchain_community.llms import OpenAI
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 
 # Configure logging
 logging.basicConfig(

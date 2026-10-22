@@ -34,3 +34,7 @@ huggingface_hub[hf_xet]
 
 # Testing
 pytest>=8.0.0
+
+# eMudhra intermediate CA compromise (October 2026): certifi pulled in by the
+# HTTP clients must be at least the release that drops those intermediates.
+certifi>=2026.10.19

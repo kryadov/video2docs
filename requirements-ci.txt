@@ -8,7 +8,7 @@ moviepy>=2.0.0
 
 # Audio processing
 pydub>=0.25.1
-SpeechRecognition>=3.10.0
+SpeechRecognition>=3.17.0
 
 # Image processing
 Pillow>=9.5.0

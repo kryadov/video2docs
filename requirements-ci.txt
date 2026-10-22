@@ -4,7 +4,7 @@
 pytube>=12.1.0
 pytubefix>=9.3.0
 opencv-python>=4.7.0
-moviepy>=2.0.0
+moviepy>=2.2.1
 
 # Audio processing
 pydub>=0.25.1

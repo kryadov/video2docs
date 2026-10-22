@@ -1,0 +1,17 @@
+# Managed by repo-guard: https://github.com/kryadov/repo-guard
+name: security
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: "49 8 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trivy:
+    uses: kryadov/repo-guard/.github/workflows/trivy.yml@e7721e635ccc5ae02771295d7d5db3b354d08609 # v1.1.0
+    permissions:
+      contents: read
+      security-events: write

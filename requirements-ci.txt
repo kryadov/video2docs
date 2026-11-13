@@ -17,7 +17,7 @@ scikit-image>=0.20.0
 # Document generation
 python-docx>=0.8.11
 odfpy>=1.4.1
-fpdf2>=2.7.4
+fpdf2>=2.8.9
 reportlab>=3.6.12
 
 # LLM and AI (lightweight client libs only)

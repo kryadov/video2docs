@@ -2,7 +2,7 @@
 pytube>=12.1.0  # For YouTube video downloading
 pytubefix>=9.3.0
 opencv-python>=4.7.0  # For video frame processing
-moviepy>=2.0.0  # For video manipulation
+moviepy>=2.2.1  # For video manipulation
 
 # Audio processing
 pydub>=0.25.1  # For audio manipulation

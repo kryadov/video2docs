@@ -2,11 +2,11 @@
 pytube>=12.1.0  # For YouTube video downloading
 pytubefix>=9.3.0
 opencv-python>=4.7.0  # For video frame processing
-moviepy>=2.0.0  # For video manipulation
+moviepy>=2.2.1  # For video manipulation
 
 # Audio processing
 pydub>=0.25.1  # For audio manipulation
-SpeechRecognition>=3.10.0  # For speech-to-text
+SpeechRecognition>=3.17.0  # For speech-to-text
 
 # Image processing
 Pillow>=9.5.0  # For image manipulation
@@ -15,11 +15,11 @@ scikit-image>=0.20.0  # For image analysis
 # Document generation
 python-docx>=0.8.11  # For DOCX format
 odfpy>=1.4.1  # For ODT format
-fpdf2>=2.7.4  # For PDF format
+fpdf2>=2.8.9  # For PDF format
 reportlab>=3.6.12  # Enhanced PDF generation
 
 # LLM and AI
-torch>=2.0.0  # PyTorch for GPU support
+torch>=2.14.1  # PyTorch for GPU support
 transformers>=4.28.1  # Hugging Face transformers
 openai>=0.27.8  # OpenAI API (optional)
 langchain>=0.0.200  # For building LLM applications

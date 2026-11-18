@@ -12,7 +12,7 @@ SpeechRecognition>=3.17.0
 
 # Image processing
 Pillow>=9.5.0
-scikit-image>=0.20.0
+scikit-image>=0.25.2
 
 # Document generation
 python-docx>=0.8.11

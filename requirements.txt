@@ -9,7 +9,7 @@ pydub>=0.25.1  # For audio manipulation
 SpeechRecognition>=3.17.0  # For speech-to-text
 
 # Image processing
-Pillow>=9.5.0  # For image manipulation
+Pillow>=12.3.0  # For image manipulation
 scikit-image>=0.20.0  # For image analysis
 
 # Document generation

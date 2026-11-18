@@ -11,7 +11,7 @@ pydub>=0.25.1
 SpeechRecognition>=3.17.0
 
 # Image processing
-Pillow>=9.5.0
+Pillow>=12.3.0
 scikit-image>=0.20.0
 
 # Document generation

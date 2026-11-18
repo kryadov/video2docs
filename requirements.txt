@@ -23,7 +23,7 @@ torch>=2.14.1  # PyTorch for GPU support
 transformers>=4.28.1  # Hugging Face transformers
 openai>=0.27.8  # OpenAI API (optional)
 langchain>=0.0.200  # For building LLM applications
-langchain-community>=0.3.27  # Community extensions for langchain
+langchain-community>=0.4.2  # Community extensions for langchain
 
 # Utilities
 numpy>=1.24.3

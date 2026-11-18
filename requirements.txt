@@ -13,7 +13,7 @@ Pillow>=9.5.0  # For image manipulation
 scikit-image>=0.20.0  # For image analysis
 
 # Document generation
-python-docx>=0.8.11  # For DOCX format
+python-docx>=1.2.0  # For DOCX format
 odfpy>=1.4.1  # For ODT format
 fpdf2>=2.8.9  # For PDF format
 reportlab>=3.6.12  # Enhanced PDF generation
